@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finance Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Finance Tracker</h1>
+    </header>
+
+    <main>
+      <section class="balance">
+        <h2>Current Balance</h2>
+        <p id="balance">$0.00</p>
+      </section>
+
+      <section class="summary">
+        <div>
+          <h3>Income</h3>
+          <p id="income">$0.00</p>
+        </div>
+        <div>
+          <h3>Expenses</h3>
+          <p id="expenses">$0.00</p>
+        </div>
+      </section>
+
+      <section class="transaction-form">
+        <h2>Add Transaction</h2>
+        <form id="form">
+          <input type="text" id="description" placeholder="Description" required />
+          <input type="number" id="amount" placeholder="Amount (+/-)" required />
+          <select id="category">
+            <option value="income">Income</option>
+            <option value="food">Food</option>
+            <option value="transport">Transport</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="others">Others</option>
+          </select>
+          <button type="submit">Add Transaction</button>
+        </form>
+      </section>
+
+      <section class="transactions">
+        <h2>Transaction History</h2>
+        <ul id="transaction-list"></ul>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const balanceEl = document.getElementById('balance');
+    const incomeEl = document.getElementById('income');
+    const expensesEl = document.getElementById('expenses');
+    const transactionListEl = document.getElementById('transaction-list');
+    const form = document.getElementById('form');
+    const descriptionInput = document.getElementById('description');
+    const amountInput = document.getElementById('amount');
+    const categoryInput = document.getElementById('category');
+
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    function renderTransactions() {
+      transactionListEl.innerHTML = '';
+      let income = 0;
+      let expense = 0;
+      transactions.forEach(transaction => {
+        const li = document.createElement('li');
+        li.classList.add(transaction.amount > 0 ? 'income' : 'expense');
+        li.innerHTML = `
+          ${transaction.description} (${transaction.category})
+          <span>${transaction.amount > 0 ? '+' : ''}$${transaction.amount}</span>
+          <button class="delete-btn" onclick="removeTransaction(${transaction.id})">x</button>
+        `;
+        transactionListEl.appendChild(li);
+
+        if (transaction.amount > 0) income += transaction.amount;
+        else expense += transaction.amount;
+      });
+
+      balanceEl.textContent = `$${(income + expense).toFixed(2)}`;
+      incomeEl.textContent = `$${income.toFixed(2)}`;
+      expensesEl.textContent = `$${Math.abs(expense).toFixed(2)}`;
+    }
+
+    function addTransaction(e) {
+      e.preventDefault();
+      const description = descriptionInput.value;
+      const amount = +amountInput.value;
+      const category = categoryInput.value;
+
+      if (description.trim() === '' || isNaN(amount)) return;
+
+      const transaction = {
+        id: Date.now(),
+        description,
+        amount,
+        category
+      };
+      transactions.push(transaction);
+      updateLocalStorage();
+      renderTransactions();
+      form.reset();
+    }
+
+    function removeTransaction(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      updateLocalStorage();
+      renderTransactions();
+    }
+
+    function updateLocalStorage() {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
+
+    form.addEventListener('submit', addTransaction);
+    renderTransactions();
+  </script>
+</body>
+</html>
